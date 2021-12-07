@@ -1,0 +1,30 @@
+struct Route {
+    std::string         rout_name;              // /, /page/ , ....
+    std::string         error_page;             // exp: error.html
+    int                 client_max_body_size;   // in kb,  -1 unlimited,
+    std::string         method;                 // GET, POST, DELETE
+    std::string         redirect;               // /abc/ef/
+    std::string         root;                   // /www/html/
+    int                 auto_index;             // 0, 1
+    std::string         default_answer;         // index.html
+    std::string         cgi_extension;          // php
+    std::string         cgi_path;               // localhost:9000
+    int                 accept_upload;          // 0, 1
+    std::string         upload_path;            // /www/html/upload
+
+
+server
+location
+host
+error_page
+client_max_body_size
+method
+redirect
+root
+autoindex
+default_answer
+cgi_extension
+cgi_path
+accept_upload
+upload_path
+}
