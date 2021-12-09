@@ -10,7 +10,7 @@
 
 struct Location {
     std::string         error_page;             // exp: error.html
-    std::string         client_max_body_size;   // in kb,  -1 unlimited,
+    std::string         client_max_body_size;   // in kb,  "" unlimited,
     std::string         method;                 // GET, POST, DELETE
     std::string         redirect;               // /abc/ef/
     std::string         root;                   // /www/html/
@@ -27,7 +27,7 @@ struct Server {
     std::string         host;
     std::string         server_name;
     std::string         error_page;             // exp: error.html
-    std::string         client_max_body_size;   // in kb,  -1 unlimited,
+    std::string         client_max_body_size;   // in kb,  "" unlimited,
     std::string         method;                 // GET, POST, DELETE
     std::string         redirect;               // /abc/ef/
     std::string         root;                   // /www/html/
@@ -66,8 +66,59 @@ class	Config_parser
             order_servers();
         }
 		~Config_parser() {
-            // free config object
         }
+
+		Location get_location_info(int conf_index, std::string url)
+        {
+			std::vector<Server> servers = config_info[conf_index].servers;
+			int server_index;
+
+			for (size_t i = servers.size(); i > 0; i--)
+			{
+				if(servers[i].server_name == "Get server_name from url") // TODO: select the server index for this url
+					server_index = i;
+			}
+			return get_location_info_from_server(conf_index, server_index, url);
+		}
+
+		Location get_location_info_from_server(int conf_index, int server_index, std::string url)
+        {
+			Location location;
+			std::string old_lacation_name = "";
+
+			std::map<std::string, Location>::iterator it;
+
+			for (it = config_info[conf_index].servers[server_index].locations.begin(); it != config_info[conf_index].servers[server_index].locations.end(); it++)
+			{
+				if(valid_location(it->first, url) && slashes_len(it->first) > slashes_len(old_lacation_name))
+				{
+					old_lacation_name = it->first;
+					location = it->second;
+				}
+			}
+			return location;
+		}
+
+		bool valid_location(std::string location_name, std::string url) // url without server_name
+        {
+			// ex: location_name = / , url = /dshfisdf/sdfds ===> true // start with : url.find(location_name) != std::string::npos
+			if(url.find(location_name) != std::string::npos)
+				return true;
+			return false;
+		}
+
+		int slashes_len(std::string str)
+		{
+			int i = 0;
+			int len = 0;
+			while(str[i])
+			{
+				if(str[i] == 47)
+					len++;
+				i++;
+			}
+			return len;
+		}
 
         int parse_config_file()
         {
@@ -252,37 +303,37 @@ class	Config_parser
 
         std::string get_arg(std::string str)
         {
-            if(str.find("server_name") != std::string::npos)
+            if(str.find("server_name ") != std::string::npos || str.find("server_name	") != std::string::npos)
                 return "server_name";
-            else if(str.find("cgi_path") != std::string::npos)
+            else if(str.find("cgi_path ") != std::string::npos || str.find("cgi_path	") != std::string::npos)
                 return "cgi_path";
-            else if(str.find("default_answer") != std::string::npos)
+            else if(str.find("default_answer ") != std::string::npos || str.find("default_answer	") != std::string::npos)
                 return "default_answer";
-            else if(str.find("server") != std::string::npos)
+            else if(str.find("server") != std::string::npos || str.find("server ") != std::string::npos || str.find("server	") != std::string::npos)
                 return "server";
-            else if(str.find("listen") != std::string::npos)
+            else if(str.find("listen ") != std::string::npos || str.find("listen	") != std::string::npos)
                 return "listen";
-            else if(str.find("location") != std::string::npos)
+            else if(str.find("location ") != std::string::npos || str.find("location	") != std::string::npos)
                 return "location";
-            else if(str.find("host") != std::string::npos)
+            else if(str.find("host ") != std::string::npos || str.find("host	") != std::string::npos)
                 return "host";
-            else if(str.find("error_page") != std::string::npos)
+            else if(str.find("error_page ") != std::string::npos || str.find("error_page	") != std::string::npos)
                 return "error_page";
-            else if(str.find("client_max_body_size") != std::string::npos)
+            else if(str.find("client_max_body_size ") != std::string::npos || str.find("client_max_body_size	") != std::string::npos)
                 return "client_max_body_size";
-            else if(str.find("method") != std::string::npos)
+            else if(str.find("method ") != std::string::npos || str.find("method	") != std::string::npos)
                 return "method";
-            else if(str.find("redirect") != std::string::npos)
+            else if(str.find("redirect ") != std::string::npos || str.find("redirect	") != std::string::npos)
                 return "redirect";
-            else if(str.find("root") != std::string::npos)
+            else if(str.find("root ") != std::string::npos || str.find("root	") != std::string::npos)
                 return "root";
-            else if(str.find("autoindex") != std::string::npos)
+            else if(str.find("autoindex ") != std::string::npos || str.find("autoindex	") != std::string::npos)
                 return "autoindex";
-            else if(str.find("cgi_extension") != std::string::npos)
+            else if(str.find("cgi_extension ") != std::string::npos || str.find("cgi_extension	") != std::string::npos)
                 return "cgi_extension";
-            else if(str.find("accept_upload") != std::string::npos)
+            else if(str.find("accept_upload ") != std::string::npos || str.find("accept_upload	") != std::string::npos)
                 return "accept_upload";
-            else if(str.find("upload_path") != std::string::npos)
+            else if(str.find("upload_path ") != std::string::npos || str.find("upload_path	") != std::string::npos)
                 return "upload_path";
             else
                 return "end_of_block";
@@ -325,9 +376,8 @@ class	Config_parser
             // std::map<std::string, Location>  location;
 
             server.port = 80;
-            server.method = "GET";
+            server.method = "";
             server.error_page = "404.html";
-            server.client_max_body_size = "-1"; // unlimited
             server.accept_upload = "0";
             server.autoindex = "0";
 
