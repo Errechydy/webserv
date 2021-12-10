@@ -71,12 +71,20 @@ class	Config_parser
 		Location get_location_info(int conf_index, std::string url)
         {
 			std::vector<Server> servers = config_info[conf_index].servers;
-			int server_index;
+			int server_index = 0;
 
-			for (size_t i = servers.size(); i > 0; i--)
+			for (int i = servers.size() - 1; i >= 0; i--)
 			{
-				if(servers[i].server_name == "Get server_name from url") // TODO: select the server index for this url
+                // std::cout << "Server name : " << servers[i].server_name << std::endl;
+
+
+
+                // std::cout << "comparing => " << url << " : " << servers[i].server_name << std::endl;
+				if(url.find(servers[i].server_name) != std::string::npos) // TODO: select the server index for this url
+                {
 					server_index = i;
+                    // std::cout << "sn = " << servers[i].server_name << std::endl;
+                }
 			}
 			return get_location_info_from_server(conf_index, server_index, url);
 		}
