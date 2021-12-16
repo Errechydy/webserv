@@ -35,8 +35,9 @@ int main(int argc, char **argvg, char **env)
         dup2(pipe_fd[1], 1);
         close(pipe_fd[1]); // close the write end after finishing writing
 
-        std::string cgi_location = "./cgi";
-        std::string req_file = "/var/ls/fsdfs.php";
+        // std::string cgi_location = "./cgi";
+        std::string cgi_location = "/goinfre/ler-rech/.brew/bin/php-cgi"; 
+        std::string req_file = "/Users/ler-rech/Desktop/webserv/cgi/php.php";
         char * const args[3] = {const_cast<char *>(cgi_location.c_str()), const_cast<char *>(req_file.c_str()), NULL};
 
         std::vector<const char *> vec;
@@ -45,11 +46,11 @@ int main(int argc, char **argvg, char **env)
         std::string server_name = "SERVER_NAME"; // The server's hostname or IP address.
         std::string server_software = "Webserv 1.0"; // The name and version of the server software that is answering the client request.
         int port = 8080;
-        std::string file_path = "sfdsf/sdfds/dsfds.fds"; // requested file_path
-        std::string path_info = "sfdsf/sdfds/dsfds"; // url until the first "?" 
-        std::string query_path = "?sfdsf/sdfds/dsfds"; // url from the first "?"  to the end
-        std::string document_root = "/var/sfdsf/sdfds/home/"; // The directory from which Web documents are served.
-        std::string script_name = "/var/file.php"; // The path to the executed file
+        std::string file_path = "/Users/ler-rech/Desktop/webserv/cgi/php.php"; // requested file_path
+        std::string path_info = "?a=value1&b=value2"; // url until the first "?" 
+        std::string query_string = "a=value1&b=value2"; // url from the first "?"  to the end
+        std::string document_root = "/Users/ler-rech/Desktop/webserv/cgi"; // The directory from which Web documents are served.
+        std::string script_name = "/Users/ler-rech/Desktop/webserv/cgi/php.php"; // The path to the executed file
         std::string remote_host = "/var/file.php"; // The remote hostname of the user making the request, from where the request is made req.get('Host'), example : www.google.com
         std::string remote_address = "875.65.158.33"; // The remote IP address of the user making the request.
         std::string content_type = "text/html"; // The request content type req.get("Content-Type")
@@ -59,15 +60,18 @@ int main(int argc, char **argvg, char **env)
         std::string referer = " https://www.cplusplus.com/reference/vector/vector/?kw=vector...."; // The URL of the document that the client points to before accessing the CGI program. req.get("Referer")
         
 
-        vec.push_back(strdup((std::string("GATEWAY_INTERFACE") + "=CGI/1.1").c_str()));
-        vec.push_back(strdup((std::string("SERVER_NAME") + "=" + server_name).c_str()));
-        vec.push_back(strdup((std::string("SERVER_SOFTWARE") + "=" + server_software).c_str()));
+        // vec.push_back(strdup((std::string("GATEWAY_INTERFACE") + "=CGI/1.1").c_str()));
+        // vec.push_back(strdup((std::string("SERVER_NAME") + "=" + server_name).c_str()));
+        // vec.push_back(strdup((std::string("SERVER_SOFTWARE") + "=" + server_software).c_str()));
+        // vec.push_back(strdup((std::string("REQUEST_METHOD") + "=" + method).c_str()));
+        // vec.push_back(strdup((std::string("PATH_TRANSLATED") + "=" + file_path).c_str()));
+
+
+
+        vec.push_back(strdup((std::string("PATH_INFO") + "=" + path_info).c_str()));
         vec.push_back(strdup((std::string("SERVER_PROTOCOL") + "=HTTP/1.1").c_str()));
         vec.push_back(strdup((std::string("SERVER_PORT") + "=" + to_string(port)).c_str()));
-        vec.push_back(strdup((std::string("REQUEST_METHOD") + "=" + method).c_str()));
-        vec.push_back(strdup((std::string("PATH_INFO") + "=" + path_info).c_str()));
-        vec.push_back(strdup((std::string("PATH_TRANSLATED") + "=" + file_path).c_str()));
-        vec.push_back(strdup((std::string("QUERY_STRING") + "=" + query_path).c_str()));
+        vec.push_back(strdup((std::string("QUERY_STRING") + "=" + query_string).c_str()));
         vec.push_back(strdup((std::string("DOCUMENT_ROOT") + "=" + document_root).c_str()));
         vec.push_back(strdup((std::string("SCRIPT_NAME") + "=" + script_name).c_str()));
         vec.push_back(strdup((std::string("REMOTE_HOST") + "=" + remote_host).c_str()));
@@ -102,7 +106,8 @@ int main(int argc, char **argvg, char **env)
         char cgi_buff[1024] = {0};
         // Read the data from pipe_fd[0], and search for EOF or content_length
         while ((nbytes = read(pipe_fd[0], cgi_buff, 1024)) > 0) { 
-                std::cout << "Got some data from pipe : " << cgi_buff << std::endl;
+                // std::cout << "Got some data from pipe : " << cgi_buff << std::endl;
+                std::cout << cgi_buff << std::endl;
         }
         close(pipe_fd[0]); // close the read end after finishing reading, don't close it until you finish reading all cgi response (EOF or read content_length if the response has content_length)
     }
