@@ -1,6 +1,8 @@
 <?php
 
 
-    echo "a = ".$_GET['a'].", v = ".$_POST['v'];
+    echo "my value = ".$_GET['userId'].", v = ".$_POST['v'];
+
+    // echo "userId = ".$_GET["userId"];
 
 ?>
