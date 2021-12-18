@@ -9,6 +9,9 @@
 #include <fstream>
 
 struct Location {
+    int                 port;
+    std::string         host;
+    std::string         server_name;
     std::string         error_page;             // exp: error.html
     std::string         client_max_body_size;   // in kb,  "" unlimited,
     std::string         method;                 // GET, POST, DELETE
@@ -161,7 +164,6 @@ class	Config_parser
                 {
                     config_info[config_num].port = get_port(str);
                     config_info[config_num].servers[0].port = config_info[config_num].port;
-                    config_info[config_num].servers[0].port = config_info[config_num].port;
                 }
                 else if(tmp_arg == "host")
                 {
@@ -311,40 +313,66 @@ class	Config_parser
 
         std::string get_arg(std::string str)
         {
-            if(str.find("server_name ") != std::string::npos || str.find("server_name	") != std::string::npos)
+
+            if(arg_found(str, "server_name ") || arg_found(str, "server_name	"))
                 return "server_name";
-            else if(str.find("cgi_path ") != std::string::npos || str.find("cgi_path	") != std::string::npos)
+            if(arg_found(str, "cgi_path ") || arg_found(str, "cgi_path	"))
                 return "cgi_path";
-            else if(str.find("default_answer ") != std::string::npos || str.find("default_answer	") != std::string::npos)
+            if(arg_found(str, "default_answer ") || arg_found(str, "default_answer	"))
                 return "default_answer";
-            else if(str.find("server") != std::string::npos || str.find("server ") != std::string::npos || str.find("server	") != std::string::npos)
+            if(arg_found(str, "server ") || arg_found(str, "server	"))
                 return "server";
-            else if(str.find("listen ") != std::string::npos || str.find("listen	") != std::string::npos)
+            if(arg_found(str, "listen ") || arg_found(str, "listen	"))
                 return "listen";
-            else if(str.find("location ") != std::string::npos || str.find("location	") != std::string::npos)
+            if(arg_found(str, "location ") || arg_found(str, "location	"))
                 return "location";
-            else if(str.find("host ") != std::string::npos || str.find("host	") != std::string::npos)
+            if(arg_found(str, "host ") || arg_found(str, "host	"))
                 return "host";
-            else if(str.find("error_page ") != std::string::npos || str.find("error_page	") != std::string::npos)
+            if(arg_found(str, "error_page ") || arg_found(str, "error_page	"))
                 return "error_page";
-            else if(str.find("client_max_body_size ") != std::string::npos || str.find("client_max_body_size	") != std::string::npos)
+            if(arg_found(str, "client_max_body_size ") || arg_found(str, "client_max_body_size	"))
                 return "client_max_body_size";
-            else if(str.find("method ") != std::string::npos || str.find("method	") != std::string::npos)
+            if(arg_found(str, "method ") || arg_found(str, "method	"))
                 return "method";
-            else if(str.find("redirect ") != std::string::npos || str.find("redirect	") != std::string::npos)
+            if(arg_found(str, "redirect ") || arg_found(str, "redirect	"))
                 return "redirect";
-            else if(str.find("root ") != std::string::npos || str.find("root	") != std::string::npos)
+            if(arg_found(str, "root ") || arg_found(str, "root	"))
                 return "root";
-            else if(str.find("autoindex ") != std::string::npos || str.find("autoindex	") != std::string::npos)
+            if(arg_found(str, "autoindex ") || arg_found(str, "autoindex	"))
                 return "autoindex";
-            else if(str.find("cgi_extension ") != std::string::npos || str.find("cgi_extension	") != std::string::npos)
+            if(arg_found(str, "cgi_extension ") || arg_found(str, "cgi_extension	"))
                 return "cgi_extension";
-            else if(str.find("accept_upload ") != std::string::npos || str.find("accept_upload	") != std::string::npos)
+            if(arg_found(str, "accept_upload ") || arg_found(str, "accept_upload	"))
                 return "accept_upload";
-            else if(str.find("upload_path ") != std::string::npos || str.find("upload_path	") != std::string::npos)
+            if(arg_found(str, "upload_path ") || arg_found(str, "upload_path	"))
                 return "upload_path";
             else
                 return "end_of_block";
+        }
+        bool arg_found(std::string str, std::string arg)
+        {
+            int i = 0;
+            int len = 0;
+            int arg_len = arg.size();
+
+            while(str[i])
+            {
+                if(str[i] != 32 && str[i] != 9)
+                    break ;
+                i++;
+            }
+            while(str[i])
+            {
+                if(str[i] == arg[len])
+                    len++;
+                else
+                    break ;
+                i++;
+            }
+            if(arg_len == len)
+                return true;
+            return false;
+
         }
         bool valid_arg(std::string str)
         {
@@ -480,6 +508,10 @@ class	Config_parser
             {
                 for (it = config_info[i].servers[0].locations.begin(); it != config_info[i].servers[0].locations.end(); it++)
                 {
+                    it->second.port = config_info[i].servers[0].port;
+                    it->second.host = config_info[i].servers[0].host;
+                    it->second.server_name = config_info[i].servers[0].server_name;
+
                     if(it->second.error_page == "")
                         it->second.error_page = config_info[i].servers[0].error_page;
                     if(it->second.client_max_body_size == "")
