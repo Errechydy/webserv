@@ -37,10 +37,10 @@ Location Config_parser::get_location_info_from_server(int conf_index, int server
 
     for (it = config_info[conf_index].servers[server_index].locations.begin(); it != config_info[conf_index].servers[server_index].locations.end(); it++)
     {
-        if(valid_location(it->first, url) && slashes_len(it->first) > slashes_len(old_lacation_name))
+        if(valid_location(it->first, url) && slashes_len(it->first) >= slashes_len(old_lacation_name) && it->first.size() >= old_lacation_name.size())
         {
-            old_lacation_name = it->first;
-            location = it->second;
+                old_lacation_name = it->first;
+                location = it->second;
         }
     }
     return location;
