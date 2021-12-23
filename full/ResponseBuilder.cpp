@@ -43,55 +43,72 @@ void    ResponseBuilder::check_method(const std::string &method, const std::stri
 }
 
 void    ResponseBuilder::check_cgi(const std::string &path){
-    //if (std::string(path, path.rfind(".") + 1) == "php")
-    // std::string full_path = "/Users/ler-rech/Desktop/webservFull/www/1.php"; //"/Users/hchorfi/Desktop/webserv/" + path;
-    // std::string full_path = "/Users/ler-rech/Desktop/webservFull/" + path;
-    Location loc;
-    loc.cgi_path = "/goinfre/ler-rech/.brew/bin/php-cgi";
-
-    std::string cookies = "";
-
-    // (void) path;
-
-
-    std::cout << "path : " << path << std::endl<< std::endl<< std::endl<< std::endl<< std::endl;
-    // std::cout << path;
-    // Cgi_class cgi(loc, full_path);
+    
+    std::string req_uri = "";
+    std::string req_cookies = "";
+    std::string req_body = "";
+    std::string req_method = "";
+    std::string req_content_type = "";
+    std::string req_content_length = "NULL";
 
 
 
 
-    Cgi_class cgi(loc, path, cookies);
+    // for testing
+    req_method = "";
+    req_content_type = "";
+    req_content_length = "";
+    req_uri = "/1.php?userId=54545&b=value2";
 
-    std::string cgi_body = "v=900fs55";
-    cgi.send_cgi_body(cgi_body);
+    // req_method = "POST";
+    // req_content_type = "application/x-www-form-urlencoded";
+    // req_content_length = "10";
+
+    // req_method = "GET";
+    // req_content_type = "text/html";
+    // req_content_length = "";
+
+    // req_body = "v=900fs55";
 
 
+    reqMap::const_iterator it_content_type = _request.find("content-type");
+    if (it_content_type != _request.end()){
+        req_content_type = it_content_type->second;
+    }
+    reqMap::const_iterator it_content_length = _request.find("content-length");
+    if (it_content_length != _request.end()){
+        req_content_length = it_content_length->second;
+    }
+    reqMap::const_iterator it_method = _request.find("Method");
+    if (it_method != _request.end()){
+        req_method = it_method->second;
+    }
+    reqMap::const_iterator it_cookie = _request.find("Cookie");
+    if (it_cookie != _request.end()){
+        req_cookies = it_cookie->second;
+    }
+    reqMap::const_iterator it_body = _request.find("Body");
+    if (it_body != _request.end()){
+        req_body = it_body->second;
+    }
+
+    // reqMap::const_iterator it_uri = _request.find("Uri");
+    // if (it_uri != _request.end()){
+    //     req_uri = it_uri->second;
+    // }
+
+
+
+    Cgi_class cgi(_location, path, req_cookies, req_uri, req_method, req_content_type, req_content_length);
+    cgi.send_cgi_body(req_body);
+
+    // Read cgi response
     int nbytes;
 	char cgi_buff[1024] = {0};
     while ((nbytes = read(cgi.pipe_fd[0], cgi_buff, 1024)) > 0) { 
-    //     //    std::cout << cgi_buff << std::endl;
            _body += cgi_buff;
     }
-	close(cgi.pipe_fd[0]); // close the read end after finishing reading, don't close it until you finish reading all cgi response (EOF or read content_length if the response has content_length)
-
-
-
-    // _body = "hello from cgi\n";
-
-    // std::cout <<  "Start_of_body : =============" << std::endl;
-    // std::cout << _body << std::endl;
-    // std::cout <<  "End_of_body : =============" << std::endl;
-    
-        // int nbytes;
-        // char cgi_buff[1024] = {0};
-        // // Read the data from pipe_fd[0], and search for EOF or content_length
-        // while ((nbytes = read(cgi.pipe_fd[0], cgi_buff, 1024)) > 0) { 
-        //     _body += cgi_buff;
-        //     // std::cout << "Got some data from pipe : " << _response << std::endl;
-        // }
-        // close(cgi.pipe_fd[0]); // close the read end after finishing reading, don't close it until you finish reading all cgi response (EOF or read content_length if the response has content_length)
-    // std::cout <<  "_body : " <<  _body << std::endl;
+	close(cgi.pipe_fd[0]);
     return;
 }
 
@@ -247,14 +264,53 @@ std::string ResponseBuilder::get_time(){
 
 void    ResponseBuilder::build_response(){
 
-    _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
-    if (_status_code == "301 Moved Permanently")
-        _response.append("Location: " + _red_location + "\r\n");
-    _response.append("Date: " + get_time() + "\r\n");
-    _response.append("Connection: keep-alive\r\n");
-    _response.append("Server: Webserv1.3.3.7 \r\n");
-    _response.append("Content-Length: " + std::to_string(_body.size()) + "\r\n");
-    _response.append("\r\n");
-    _response.append(_body + "\r\n");
-    //std::cout << _response;
+
+    if(_location.cgi_path != "")
+    {
+        std::string cgiHeader;
+        std::string cgiBody;
+        size_t split;
+        if ((split = _body.find("\r\n\r\n") + 4) < _body.size()){
+            cgiHeader = _body.substr(0, split);
+            cgiBody = _body.substr(split);
+        }else{
+            cgiHeader = _body.substr(0, _request.size() -  1);
+        }
+
+        // _body has headers
+        _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
+        if (_status_code == "301 Moved Permanently")
+            _response.append("Location: " + _red_location + "\r\n");
+        _response.append("Date: " + get_time() + "\r\n");
+        _response.append("Connection: keep-alive\r\n");
+        _response.append("Server: Webserv1.3.3.7 \r\n");
+
+        // Append cgi headers
+        cgiHeader.erase(std::remove(cgiHeader.begin(), cgiHeader.end(), '\r'), cgiHeader.end());
+        std::istringstream input(cgiHeader);
+        std::string line, buffer;
+        int i = 0;
+        while(std::getline(input, line)){
+            _response.append(line+"\r\n");
+            i++;
+        }
+
+        _response.append("\r\n");
+        _response.append(cgiBody + "\r\n");
+        //std::cout << _response;
+    }
+    else
+    {
+        _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
+        if (_status_code == "301 Moved Permanently")
+            _response.append("Location: " + _red_location + "\r\n");
+        _response.append("Date: " + get_time() + "\r\n");
+        _response.append("Connection: keep-alive\r\n");
+        _response.append("Server: Webserv1.3.3.7 \r\n");
+        _response.append("Content-Length: " + std::to_string(_body.size()) + "\r\n");
+        _response.append("\r\n");
+        _response.append(_body + "\r\n");
+        //std::cout << _response;
+    }
+    
 }

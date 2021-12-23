@@ -68,6 +68,8 @@ int Cgi_class::send_cgi_body(std::string cgi_body)
 
 void Cgi_class::set_cgi_args()
 {
+	std::string params = uri.substr(uri.find_first_of("?")+1);
+
 	cgi_args.push_back(strdup((std::string("REDIRECT_STATUS") + "=200").c_str()));
 	cgi_args.push_back(strdup((std::string("GATEWAY_INTERFACE") + "=CGI/1.1").c_str()));
 	cgi_args.push_back(strdup((std::string("SERVER_PROTOCOL") + "=HTTP/1.1").c_str()));
@@ -75,31 +77,13 @@ void Cgi_class::set_cgi_args()
 	cgi_args.push_back(strdup((std::string("SERVER_NAME") + "="+location.host).c_str()));
 	cgi_args.push_back(strdup((std::string("PATH_TRANSLATED") + "="+req_file).c_str()));
 	cgi_args.push_back(strdup((std::string("SERVER_PORT") + "="+to_string(location.port)).c_str()));
-
-
-
-	cgi_args.push_back(strdup((std::string("HTTP_COOKIE") + "="+cookies+";user=John%20Doe; expires=Thu, 20-Jan-2022 16:04:16 GMT; Max-Age=2592000;").c_str())); // TODO: get the Set-Cookie from client request make them in one string 
-
-
-
-	cgi_args.push_back(strdup((std::string("PATH_INFO") + "= ?userId=54545&b=value2").c_str()));
-	cgi_args.push_back(strdup((std::string("QUERY_STRING") + "=userId=54545&b=value2").c_str())); // ....com/sfds?a=sdjkfhdks
-	
-	cgi_args.push_back(strdup((std::string("REQUEST_METHOD") + "=POST").c_str())); // Method with which the request was made.
-	cgi_args.push_back(strdup((std::string("CONTENT_TYPE") + "=application/x-www-form-urlencoded").c_str())); // REQUEST DATA
-	// If the request includes a message-body, the CONTENT_TYPE variable is set to the MIME type of the body of the request.
-	cgi_args.push_back(strdup((std::string("CONTENT_LENGTH") + "=10").c_str())); // // or 10 bytes
-
-
-
-	// cgi_args.push_back(strdup((std::string("REQUEST_METHOD") + "=GET").c_str())); // Method with which the request was made.
-	// cgi_args.push_back(strdup((std::string("CONTENT_TYPE") + "=text/html").c_str())); // If the request includes a message-body, the CONTENT_TYPE variable is set to the Internet Media Type [6] of the message-body.
-	// cgi_args.push_back(strdup((std::string("CONTENT_LENGTH") + "=NULL").c_str())); 
-
-
+	cgi_args.push_back(strdup((std::string("HTTP_COOKIE") + "="+cookies).c_str()));
+	cgi_args.push_back(strdup((std::string("PATH_INFO") + "=?"+params).c_str()));
+	cgi_args.push_back(strdup((std::string("QUERY_STRING") + "="+ params).c_str()));
+	cgi_args.push_back(strdup((std::string("REQUEST_METHOD") + "="+req_method).c_str()));
+	cgi_args.push_back(strdup((std::string("CONTENT_TYPE") + "="+req_content_type).c_str()));
+	cgi_args.push_back(strdup((std::string("CONTENT_LENGTH") + "="+req_content_length).c_str()));
 	cgi_args.push_back(NULL);
-
-
 }
 
 std::string Cgi_class::to_string(int n)
