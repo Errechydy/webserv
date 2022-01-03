@@ -156,17 +156,16 @@ void    MySocket::sendResponse(int newSocket){
 
 void     MySocket::dataHandler(const int &newSocket){
     int         byteRcived;
-    char        buffer[1048576] = {'\0'}; //data will be recived 1048576(max size recv buffer) byte by 1048576 byte
+    char        buffer[1024] = {'\0'}; //data will be recived 1048576(max size recv buffer) byte by 1048576 byte
     // std::cout << newSocket << "------\n";
     byteRcived = recv(newSocket, &buffer[0], sizeof(buffer), 0);
-    // std::cout << buffer ;
+    //std::string ss(buffer, 1024);
+    //std::cout << byteRcived << ss.substr(0, 500) << "\n";
     if (byteRcived <= 0){
         if (byteRcived == 0){//EOS reached
-            //std::cout << "connection closed on socket: " << newSocket << std::endl;
-            
+            // std::cout << "connection closed on socket: " << newSocket << std::endl;
         } else {
             perror("Error reciving data from some new socket:");
-            exit(EXIT_FAILURE);
         }
         FD_CLR(newSocket, &_readFds);
         FD_CLR(newSocket, &_writeFds);
@@ -178,18 +177,20 @@ void     MySocket::dataHandler(const int &newSocket){
         //if the socket associate with not exist it will be creat new one and return ref to it's string (request) for appending 
         dataMap::iterator it = _sockData.find(newSocket);
         it->second.append(buffer, byteRcived);
-        //if (it->second._dataReadCheck){
+        if (it->second._dataReadCheck){
+            //std::cout << "done reading\n";
             FD_CLR(it->first, &_readFds);
             FD_SET(it->first, &_writeFds);
             it->second.parse();//need implementation
-            //std::cout << "here\n";
             
             it->second.buildResponse(_config, _tools, it->second._server);//replace the object with only the map or vect that hold info from config file
             //std::cout << it->second._response;
             //sendResponse(it->);
             
             //requestParssing(it);//provisoire
-        //}
+        } else {
+            //std::cout << "not yet\n";
+        }
     }
     //return 0;
 }

@@ -28,7 +28,11 @@ class SocketData{
 
     private:
         bool                                _dataReadCheck;
+        bool                                _recheckHeader;
+        bool                                _recheckbody;
         size_t                              _dataWriteCheck;
+        size_t                              _reqHeaderLen;
+        size_t                              _reqbodyLen;
         int                                 _server;
         std::string                         _request;
         std::string                         _response;
@@ -42,9 +46,10 @@ class SocketData{
     
     private:
         void append(const char* buffer, int byteRecived);
-        void checkDataReadEnd(const std::string &dataChanked);
+        void checkDataReadEnd();
         void parse();
         void buildResponse(const Config_parser &config, const Tools &tools, int server);
+        void check_chunked();
         //void check
 };
 

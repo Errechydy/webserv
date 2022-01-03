@@ -37,7 +37,7 @@ int Cgi_class::execute_cgi(char * const args[])
 		close(body_pipe_fd[0]);
 
 		if (execve(args[0], args, const_cast<char * const *>(&cgi_args[0])) == -1)
-			perror("Could not execve fff");
+			perror("Could not execve");
 	}
 	else // parent process
 	{
@@ -69,6 +69,8 @@ int Cgi_class::send_cgi_body(std::string cgi_body)
 void Cgi_class::set_cgi_args()
 {
 	std::string params = uri.substr(uri.find_first_of("?")+1);
+
+	// std::cout << "req_file : " << req_file << std::endl;
 
 	cgi_args.push_back(strdup((std::string("REDIRECT_STATUS") + "=200").c_str()));
 	cgi_args.push_back(strdup((std::string("GATEWAY_INTERFACE") + "=CGI/1.1").c_str()));

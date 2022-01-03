@@ -14,6 +14,13 @@ Config_parser::~Config_parser(){
 
 Location Config_parser::get_location_info(int conf_index, std::string url)
 {
+    url = url.substr(0, url.find("?"));
+
+
+    // std::cout << "URL = " << url << std::endl;
+
+
+
     std::vector<Server> servers = config_info[conf_index].servers;
     int server_index = 0;
 
@@ -38,6 +45,10 @@ Location Config_parser::get_location_info_from_server(int conf_index, int server
     Location location;
     std::string old_lacation_name = "";
 
+
+    // std::cout << "URL = " << url << std::endl;
+
+
     std::map<std::string, Location>::iterator it;
 
     for (it = config_info[conf_index].servers[server_index].locations.begin(); it != config_info[conf_index].servers[server_index].locations.end(); it++)
@@ -48,6 +59,11 @@ Location Config_parser::get_location_info_from_server(int conf_index, int server
             location = it->second;
         }
     }
+
+    // std::cout << "loc cgi = " << location.cgi_path << std::endl;
+    // std::cout << "loc extension = " << location.cgi_extension << std::endl;
+
+
     return location;
 }
 
@@ -126,9 +142,9 @@ int Config_parser::parse_config_file()
         else if(tmp_arg == "error_page")
         {
             if(location_active)
-                config_info[config_num].servers[0].locations[location_name].error_page = get_value(str);
+                config_info[config_num].servers[0].locations[location_name].error_page.insert(get_error_value(str));
             else if(server_active)
-                config_info[config_num].servers[0].error_page = get_value(str);
+                config_info[config_num].servers[0].error_page.insert(get_error_value(str)); 
             else
                 return (1);
         }
@@ -354,7 +370,7 @@ Server Config_parser::new_server()
 
     server.port = 80;
     server.method = "";
-    server.error_page = "404.html";
+    // server.error_page.insert(std::pair<std::string , std::string>("404", "404.html"));
     server.accept_upload = "0";
     server.autoindex = "0";
 
@@ -395,6 +411,15 @@ std::string Config_parser::get_location_name(std::string str)
     }
     location_name = str.substr(pos + 9, i);
     return location_name;
+}
+
+std::pair<std::string , std::string> Config_parser::get_error_value(std::string str)
+{
+    std::string v = get_value(str);
+    std::string value = get_value(v);
+    std::string key = v.substr(0, v.find(" "));
+
+    return std::pair<std::string , std::string>(key, value);
 }
 
 std::string Config_parser::get_value(std::string str)
@@ -453,8 +478,15 @@ void Config_parser::fill_locations ()
             it->second.host = config_info[i].servers[0].host;
             it->second.server_name = config_info[i].servers[0].server_name;
 
-            if(it->second.error_page == "")
-                it->second.error_page = config_info[i].servers[0].error_page;
+            // if(it->second.error_page == "")
+            //     it->second.error_page = config_info[i].servers[0].error_page;
+
+
+            it->second.error_page.insert(config_info[i].servers[0].error_page.begin(), config_info[i].servers[0].error_page.end());
+
+
+
+
             if(it->second.client_max_body_size == "")
                 it->second.client_max_body_size = config_info[i].servers[0].client_max_body_size;
             if(it->second.method == "")

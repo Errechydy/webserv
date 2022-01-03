@@ -20,7 +20,7 @@ void    ResponseBuilder::check_http(const std::string &http){
         check_method(_request.find("Method")->second, _location.method);
     } else {
         _status_code = "505 HTTP Version Not Supported";
-        // std::cout << http << ": " <<_status_code << std::endl;//don't delete or comment
+        std::cout << http << ": " <<_status_code << std::endl;//don't delete or comment
         return;
     }
 }
@@ -29,7 +29,7 @@ void    ResponseBuilder::check_method(const std::string &method, const std::stri
     //std::cout << "checking allowed methods: " << method << "...\n";
     if (std::string("GET,POST,DELETE,PUT,TRACE,CONNECT,HEAD,OPTIONS").find(method) == std::string::npos){
         _status_code = "405 Method Not Allowed";
-        // std::cout << method << ": " <<_status_code << std::endl;//don't delete or comment
+        std::cout << method << ": " <<_status_code << std::endl;//don't delete or comment
         _status_code = "501 Internal Server Error";
         return;
     }
@@ -37,12 +37,14 @@ void    ResponseBuilder::check_method(const std::string &method, const std::stri
         check_uri(_request.find("Uri")->second, _location.root, _location.default_answer);
     } else {
             _status_code = "405 Method Not Allowed";
-            // std::cout << method << ": " <<_status_code << std::endl;//don't delete or comment
+            std::cout << method << ": " <<_status_code << std::endl;//don't delete or comment
             return;
     }
 }
 
 void    ResponseBuilder::check_cgi(const std::string &path){
+
+
     
     std::string req_uri = "";
     std::string req_cookies = "";
@@ -58,7 +60,8 @@ void    ResponseBuilder::check_cgi(const std::string &path){
     req_method = "";
     req_content_type = "";
     req_content_length = "";
-    req_uri = "/1.php?userId=54545&b=value2";
+    req_uri = "";
+    // req_uri = "/php.php?userId=54545&b=value2";
 
     // req_method = "POST";
     // req_content_type = "application/x-www-form-urlencoded";
@@ -69,6 +72,11 @@ void    ResponseBuilder::check_cgi(const std::string &path){
     // req_content_length = "";
 
     // req_body = "v=900fs55";
+
+
+
+    // for (std::map<std::string, std::string >::iterator it= _location.error_page.begin(); it!= _location.error_page.end(); ++it)
+    //     std::cout << it->first << " => " << it->second << '\n';
 
 
     reqMap::const_iterator it_content_type = _request.find("content-type");
@@ -92,10 +100,22 @@ void    ResponseBuilder::check_cgi(const std::string &path){
         req_body = it_body->second;
     }
 
-    // reqMap::const_iterator it_uri = _request.find("Uri");
+    // reqMap::const_iterator it_uri = _request.find("Query");
     // if (it_uri != _request.end()){
     //     req_uri = it_uri->second;
     // }
+
+    // std::cout << "-------uri---------" << std::endl;
+    // std::cout << "req_uri : " << req_uri << std::endl;
+    // std::cout << "-------uri---------" << std::endl;
+
+    // std::cout << "-------body---------" << std::endl;
+    // std::cout << req_body << std::endl;
+    // std::cout << "-------end-body---------" << std::endl;
+
+
+
+
 
 
 
@@ -108,6 +128,8 @@ void    ResponseBuilder::check_cgi(const std::string &path){
     while ((nbytes = read(cgi.pipe_fd[0], cgi_buff, 1024)) > 0) { 
            _body += cgi_buff;
     }
+
+    // std::cout << "Cgi body : " << _body << std::endl;
 	close(cgi.pipe_fd[0]);
     return;
 }
@@ -131,17 +153,73 @@ void    ResponseBuilder::check_uri(const std::string &uri, const std::string &ro
             }
         }
         std::string extention = std::string(path, path.rfind(".") + 1);
-        if (extention == "php"){
-            if (_location.cgi_extension == "php")
+        if (_location.cgi_extension != "" && _location.cgi_path != "") {
+
+            // std::cout << "ext : " << extention << "   , cgi ext : " << _location.cgi_extension << std::endl;
+
+            if (extention == _location.cgi_extension)
                 check_cgi(path);
             else
                 _status_code = "403 Forbidden";
             return;
         } else 
             check_content_type(extention);
+        if (check_max_body() < 0)
+            return;
+        if(_request.find("Method")->second == "POST"){
+            if (check_uploads() < 0)
+                return;
+        }
         _response.append("Last-Modified: " + last_mod(path_stat.st_mtime) + "\r\n");
         stream_body(path);
     }
+}
+
+int     ResponseBuilder::check_max_body(){
+    size_t maxBodySize = std::stoi(_location.client_max_body_size) * 1024 * 1024;
+    if (_request.find("Body")->second.size() > maxBodySize){
+        _status_code = "413 Payload Too Large";
+        return -1;
+    }
+    // std::cout << "maxbody size: " << maxBodySize << "\n"; 
+    return 0;
+}
+
+int     ResponseBuilder::check_uploads(){
+    std::string content_type;
+    std::string boundry;
+    std::string filename;
+
+    reqMap::const_iterator it;
+    if (((it = _request.find("Content-Type")) != _request.end()) || ((it = _request.find("content-type")) != _request.end())){
+        content_type = it->second;
+        if (content_type.find("multipart/form-data") != std::string::npos){
+            size_t pos = content_type.find("boundary=") + 9;
+            boundry = content_type.substr(pos);
+            it = _request.find("Body");
+            if ((pos = it->second.find("filename=\"")) != std::string::npos){
+                if (_location.accept_upload == "0"){
+                    _status_code = "403 Forbidden";
+                    return -1;
+                }
+                int pos2 = it->second.find("\"", pos + 10);
+                filename = it->second.substr(pos + 10, pos2 - (pos + 10));
+
+                pos2 = it->second.find("\r\n\r\n") + 4;
+                //std::cout << pos2 << "\n";
+                pos = it->second.find(boundry + "--");
+                //std::cout << pos << "\n";
+                //std::cout << _location.root + _location.upload_path + "/" + filename << "\n";
+                std::ofstream out(_location.root + _location.upload_path + "/" + filename);
+                out << it->second.substr(pos2, pos - pos2 - 2);
+                out.close();
+                //std::cout << "upload file name" << filename << "\n";
+            }
+            //std::cout << boundry << "\n";
+        }
+    }
+
+    return 0;
 }
 
 int    ResponseBuilder::check_autoindex(const std::string &path){
@@ -179,6 +257,13 @@ int    ResponseBuilder::check_autoindex(const std::string &path){
 }
 
 int     ResponseBuilder::check_indexs(std::string &path, const std::string &indexs){
+
+    if (indexs.size() == 0){
+        _status_code = "403 Forbidden";
+        // std::cout << path << ": " <<_status_code << std::endl;//don't delete or comment
+        return -1;
+    }
+
     struct stat path_stat;
     std::string old_path = path;
     std::vector<std::string> strings;
@@ -264,40 +349,91 @@ std::string ResponseBuilder::get_time(){
 
 void    ResponseBuilder::build_response(){
 
-
     if(_location.cgi_path != "")
     {
         std::string cgiHeader;
         std::string cgiBody;
         size_t split;
-        if ((split = _body.find("\r\n\r\n") + 4) < _body.size()){
-            cgiHeader = _body.substr(0, split);
-            cgiBody = _body.substr(split);
-        }else{
+
+        
+
+
+        // std::cout << std::endl << std::endl << std::endl << "=============body==============" << std::endl;
+        // std::cout << _body << std::endl;
+        // std::cout << "=============END body==============" << std::endl;
+
+        // std::cout << "split : "  <<  _body.find("\r\n\r\n") << std::endl;
+
+        // if(_body.find("\r\n\r\nfff") != std::string::npos)
+        //     std::cout << "split : "  <<  _body.find("\r\n\r\n") << std::endl;
+        // else
+        //     std::cout << "Nope " << std::endl;
+
+        // if(_body.find("\r\n\r\n") != std::string::npos)
+        //     std::cout << "splitssss : "  <<  _body.find("\r\n\r\n") << std::endl;
+        // else
+        //     std::cout << "Nopesss " << std::endl;
+
+
+        bool header_exist = false;
+
+        if(_body.find("\r\n\r\n") != std::string::npos)
+            header_exist = true;
+
+        if(header_exist)
+        {
+            if ((split = _body.find("\r\n\r\n")) < _body.size()){
+                cgiHeader = _body.substr(0, split);
+                cgiBody = _body.substr(split);
+            }
+            else
+                cgiHeader = _body.substr(0, _request.size() -  1);
+        }
+        else
+        {
             cgiHeader = _body.substr(0, _request.size() -  1);
         }
 
-        // _body has headers
-        _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
-        if (_status_code == "301 Moved Permanently")
-            _response.append("Location: " + _red_location + "\r\n");
-        _response.append("Date: " + get_time() + "\r\n");
-        _response.append("Connection: keep-alive\r\n");
-        _response.append("Server: Webserv1.3.3.7 \r\n");
+        // // _body has headers
+        // _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
+        // if (_status_code == "301 Moved Permanently")
+        //     _response.append("Location: " + _red_location + "\r\n");
+        // _response.append("Date: " + get_time() + "\r\n");
+        // _response.append("Connection: keep-alive\r\n");
+        // _response.append("Server: Webserv1.3.3.7 \r\n");
 
-        // Append cgi headers
-        cgiHeader.erase(std::remove(cgiHeader.begin(), cgiHeader.end(), '\r'), cgiHeader.end());
-        std::istringstream input(cgiHeader);
-        std::string line, buffer;
-        int i = 0;
-        while(std::getline(input, line)){
-            _response.append(line+"\r\n");
-            i++;
-        }
+        // // Append cgi headers
+        // if(header_exist)
+        // {
+        //     cgiHeader.erase(std::remove(cgiHeader.begin(), cgiHeader.end(), '\r'), cgiHeader.end());
+        //     std::istringstream input(cgiHeader);
+        //     std::string line, buffer;
+        //     int i = 0;
+        //     while(std::getline(input, line)){
+        //         _response.append(line+"\r\n");
+        //         i++;
+        //     }
 
-        _response.append("\r\n");
-        _response.append(cgiBody + "\r\n");
-        //std::cout << _response;
+        //     _response.append("\r\n");
+        //     _response.append(cgiBody + "\r\n");
+        // }
+        // else
+        // {
+        //     _response.append("\r\n");
+        //     _response.append(_body);
+        // }
+
+
+            _response.append(_body);
+
+
+
+        // std::cout << std::endl << std::endl << std::endl << "=============_response==============" << std::endl;
+        // std::cout << _response << std::endl;
+        // std::cout << "=============END _response==============" << std::endl;
+
+
+
     }
     else
     {
@@ -312,5 +448,4 @@ void    ResponseBuilder::build_response(){
         _response.append(_body + "\r\n");
         //std::cout << _response;
     }
-    
 }

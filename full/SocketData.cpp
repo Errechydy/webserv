@@ -2,36 +2,88 @@
 
 SocketData::SocketData(){
     _dataReadCheck = false;
+    _recheckHeader = true;
+    _recheckbody = true;
     _dataWriteCheck = 0;
-    _request.clear();
-    _response.clear();
+    _reqHeaderLen = 0;
+    _reqbodyLen = 0;
     //std::cout << "*******************constructor\n";
 }
 
 void SocketData::append(const char* buffer, int byteRecived){
     _request.append(buffer, byteRecived);
-    //checkDataReadEnd(std::string(buffer, byteRecived));
+    checkDataReadEnd();
 }
 
-void SocketData::checkDataReadEnd(const std::string &dataChanked){
-    size_t headerLen = 0;
-    size_t bodyLen = 0;
+void SocketData::checkDataReadEnd(){
     size_t tmp = 0;
-    if ((headerLen = dataChanked.find("\r\n\r\n")) != std::string::npos){
-        headerLen += 4;
-        if ((tmp = _request.find("Content-Length:")) != std::string::npos){
-            bodyLen = std::stoi(_request.substr(tmp + 16, 100));//need more effort
-        } else 
-            bodyLen = 0;
-        if (_request.size() == headerLen + bodyLen){
-            _dataReadCheck = true;
-        }
+    size_t tmp2 = 0;
+
+    if (_recheckHeader && (tmp2 = _request.find("\r\n\r\n")) != std::string::npos){
+        //std::cout << "rnrn exist \n";
+        _reqHeaderLen += tmp2 + 4;
+        _recheckHeader = false;
     }
+
+    if (_recheckbody && (((tmp = _request.find("Content-Length:")) != std::string::npos) || ((tmp = _request.find("content-length:")) != std::string::npos))){
+        _reqbodyLen = std::stoi(_request.substr(tmp + 16, 100));//need more effort
+        _recheckbody = false;
+    }
+    
+    if ((tmp = _request.rfind("0\r\n\r\n")) != std::string::npos)
+        _reqbodyLen = tmp + 5 - _reqHeaderLen;
+
+    //std::cout << _request.size() << " = " << _reqHeaderLen << "+" << _reqbodyLen << "=" << _reqHeaderLen + _reqbodyLen << "\n";
+    if (_request.size() == _reqHeaderLen + _reqbodyLen){
+        //std::cout << _reqHeaderLen << "+" << _reqbodyLen << "=" << _reqHeaderLen + _reqbodyLen << "\n";
+        _dataReadCheck = true;
+    }
+}
+
+void SocketData::check_chunked(){
+    reqMap::iterator it;
+    size_t pos = 0;
+    std::string lenHex;
+    size_t lenDec = 0;
+    size_t tmp;
+    std::string newbody;
+
+    it = _requestParssed.find("Transfer-Encoding");
+    if (it == _requestParssed.end())
+        it = _requestParssed.find("transfer-encoding");
+    if (it != _requestParssed.end() && it->second == "chunked"){
+        // std::cout << "chunked\n";
+        while(true){
+            tmp = _reqBody.find("\r\n", pos);
+            //std::cout << _reqBody[tmp - 1];
+            //std::cout << "-" <<_reqBody.substr(pos, tmp - pos) << "-\n";
+            lenHex = _reqBody.substr(pos, tmp - pos);
+            std::stringstream stream;
+            stream << lenHex;
+            stream >> std::hex >> lenDec;
+            //std::cout << "lenHex: " << lenHex << "dec : " << lenDec << "\n";
+
+            _reqBody.erase(pos, (tmp + 2) - pos);
+            //newbody += _reqBody.substr(tmp + 2, lenDec);
+            pos += lenDec;
+            _reqBody.erase(pos, 2);
+            stream.clear();
+            if (lenDec == 0)
+                break;
+        }
+        //std::cout << "**" << _reqBody << "**\n";
+        
+    } else {
+        // std::cout << "not chunked\n";            
+    }
+
+    // std::ofstream out("output.png");
+    // out << _reqBody;
+    // out.close();
 }
 
 void SocketData::parse(){
 
-    
     std::string header;
     size_t split;
     if ((split = _request.find("\r\n\r\n") + 4) < _request.size()){
@@ -40,11 +92,10 @@ void SocketData::parse(){
     }else{
         header = _request.substr(0, _request.size() -  1);
     }
-
     // std::cout << Red <<"--------------------------------/ request/ --------------------------------\n" << Reset;
     // //std::cout << _request << "\n";
     // std::cout << "---Headers---\n" << header << "-------\n";
-    // std::cout << "---Body---\n" << _reqBody << "-------\n";
+    // //std::cout << "---Body---\n" << _reqBody << "-------\n";
     // std::cout << Red <<"--------------------------------/ end request/ --------------------------------\n" << Reset;
     
     header.erase(std::remove(header.begin(), header.end(), '\r'), header.end());//remove /r (printing problem)
@@ -77,9 +128,9 @@ void SocketData::parse(){
         input2.clear();
         i++;
     }
-
+    check_chunked();
     _requestParssed.insert(reqPair("Body", _reqBody));
-    reqMap::iterator it;
+    // reqMap::iterator it;
     // std::cout << Red <<"--------------------------------/ request parssed / --------------------------------\n" << Reset;
     // for (it = _requestParssed.begin(); it != _requestParssed.end(); it++){
     //     std::cout << "** -" << it->first << "-:-" << it->second << "-\n";

@@ -44,6 +44,8 @@ class ResponseBuilder{
         void    check_content_type(const std::string &extention);
         int     check_indexs(std::string &path, const std::string &indexs);
         int     check_autoindex(const std::string &path);
+        int     check_uploads();
+        int     check_max_body();
         void    check_cgi(const std::string &path);
         void    redirection(const std::string &path);
         void    build_response();

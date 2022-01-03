@@ -15,7 +15,8 @@ struct Location {
     int                 port;
     std::string         host;
     std::string         server_name;
-    std::string         error_page;             // exp: error.html
+    // std::string         error_page;             // exp: error.html
+    std::map<std::string, std::string>  error_page;
     std::string         client_max_body_size;   // in kb,  "" unlimited,
     std::string         method;                 // GET, POST, DELETE
     std::string         redirect;               // /abc/ef/
@@ -32,7 +33,8 @@ struct Server {
     int                 port;
     std::string         host;
     std::string         server_name;
-    std::string         error_page;             // exp: error.html
+    // std::string         error_page;             // exp: error.html
+    std::map<std::string, std::string> error_page;
     std::string         client_max_body_size;   // in kb,  "" unlimited,
     std::string         method;                 // GET, POST, DELETE
     std::string         redirect;               // /abc/ef/
@@ -76,6 +78,7 @@ class	Config_parser
         Location new_location();
         int get_port(std::string str);
         std::string get_location_name(std::string str);
+        std::pair<std::string , std::string> get_error_value(std::string str);
         std::string get_value(std::string str);
         void fill_locations ();
         void order_servers ();
