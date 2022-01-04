@@ -29,6 +29,7 @@ class MySocket{
 
     public:
         typedef std::map<int, SocketData> dataMap;
+        typedef std::map<std::string, std::string>  reqMap;
 
     private:
         struct Server{

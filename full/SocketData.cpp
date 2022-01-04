@@ -82,6 +82,21 @@ void SocketData::check_chunked(){
     // out.close();
 }
 
+void SocketData::check_query(){
+    std::string query;
+    reqMap::iterator it = _requestParssed.find("Uri");
+
+    if (it != _requestParssed.end()){
+        size_t pos = it->second.find("?");
+        if (pos != std::string::npos){
+            query = std::string(it->second, it->second.find("?"));
+            it->second.erase(pos);
+            _requestParssed.insert(reqPair("Query", query));
+            // std::cout << query << std::endl;
+        }
+    }
+}
+
 void SocketData::parse(){
 
     std::string header;
@@ -128,6 +143,7 @@ void SocketData::parse(){
         input2.clear();
         i++;
     }
+    check_query();
     check_chunked();
     _requestParssed.insert(reqPair("Body", _reqBody));
     // reqMap::iterator it;

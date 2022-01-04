@@ -6,11 +6,6 @@
 
 // echo "userId = ".$_GET["userId"];
 
-
-// echo " v = ".$_POST['v'];
-
-
-echo "dsfsfds";
-
+echo "hello from php";
 
 ?>

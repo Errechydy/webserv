@@ -50,6 +50,7 @@ class SocketData{
         void parse();
         void buildResponse(const Config_parser &config, const Tools &tools, int server);
         void check_chunked();
+        void check_query();
         //void check
 };
 

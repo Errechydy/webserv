@@ -5,7 +5,7 @@
 // }
 
 ResponseBuilder::ResponseBuilder(const reqMap &request, Config_parser config, const Tools &tools, int server): _request(request), _config(config), _tools(tools){
-    _status_code = "200 OK";
+    _status_code = "200 Ok";
     std::string host_uri = _request.find("Host")->second + _request.find("Uri")->second;
     //std::cout << host_uri << std::endl;
     _location = _config.get_location_info(server, host_uri);
@@ -20,7 +20,7 @@ void    ResponseBuilder::check_http(const std::string &http){
         check_method(_request.find("Method")->second, _location.method);
     } else {
         _status_code = "505 HTTP Version Not Supported";
-        std::cout << http << ": " <<_status_code << std::endl;//don't delete or comment
+        // std::cout << http << ": " <<_status_code << std::endl;//don't delete or comment
         return;
     }
 }
@@ -28,24 +28,20 @@ void    ResponseBuilder::check_http(const std::string &http){
 void    ResponseBuilder::check_method(const std::string &method, const std::string &allowed_methods){
     //std::cout << "checking allowed methods: " << method << "...\n";
     if (std::string("GET,POST,DELETE,PUT,TRACE,CONNECT,HEAD,OPTIONS").find(method) == std::string::npos){
-        _status_code = "405 Method Not Allowed";
-        std::cout << method << ": " <<_status_code << std::endl;//don't delete or comment
-        _status_code = "501 Internal Server Error";
+        _status_code = "501 Not Implemented";
+        // std::cout << method << ": " <<_status_code << std::endl;//don't delete or comment
         return;
     }
     else if(allowed_methods.find(method) != std::string::npos){
         check_uri(_request.find("Uri")->second, _location.root, _location.default_answer);
     } else {
             _status_code = "405 Method Not Allowed";
-            std::cout << method << ": " <<_status_code << std::endl;//don't delete or comment
+            // std::cout << method << ": " <<_status_code << std::endl;//don't delete or comment
             return;
     }
 }
 
 void    ResponseBuilder::check_cgi(const std::string &path){
-
-
-    
     std::string req_uri = "";
     std::string req_cookies = "";
     std::string req_body = "";
@@ -152,11 +148,13 @@ void    ResponseBuilder::check_uri(const std::string &uri, const std::string &ro
                 return;
             }
         }
+        if (access(path.c_str(), R_OK) != 0){
+            _status_code = "403 Forbidden";
+            // std::cout << path << ": " <<_status_code << std::endl;//don't delete or comment
+            return;
+        }
         std::string extention = std::string(path, path.rfind(".") + 1);
-        if (_location.cgi_extension != "" && _location.cgi_path != "") {
-
-            // std::cout << "ext : " << extention << "   , cgi ext : " << _location.cgi_extension << std::endl;
-
+         if (_location.cgi_extension != "" && _location.cgi_path != "") {
             if (extention == _location.cgi_extension)
                 check_cgi(path);
             else
@@ -298,14 +296,15 @@ int     ResponseBuilder::check_indexs(std::string &path, const std::string &inde
 void    ResponseBuilder::redirection(const std::string &path){
     _status_code = "301 Moved Permanently";
     _red_location = path + "/";
-    stream_body("./files/3xx.html");
+    //stream_body("./files/xxx.html");
 }
 
 void    ResponseBuilder::check_content_type(const std::string &extention){
     std::string content_type = _tools._mime.find(extention)->second;
     //it = _tools._mime.find(extention);
     if(!content_type.size()){
-        _status_code = "415 Unsupported Media Type";
+        // _status_code = "415 Unsupported Media Type"; // TODO:
+        _status_code = "200 Ok";
         return;
     } else {
         _status_code = "200 Ok";
@@ -347,34 +346,13 @@ std::string ResponseBuilder::get_time(){
     return str;
 }
 
-void    ResponseBuilder::build_response(){
-
+void    ResponseBuilder::build_response()
+{
     if(_location.cgi_path != "")
     {
         std::string cgiHeader;
         std::string cgiBody;
         size_t split;
-
-        
-
-
-        // std::cout << std::endl << std::endl << std::endl << "=============body==============" << std::endl;
-        // std::cout << _body << std::endl;
-        // std::cout << "=============END body==============" << std::endl;
-
-        // std::cout << "split : "  <<  _body.find("\r\n\r\n") << std::endl;
-
-        // if(_body.find("\r\n\r\nfff") != std::string::npos)
-        //     std::cout << "split : "  <<  _body.find("\r\n\r\n") << std::endl;
-        // else
-        //     std::cout << "Nope " << std::endl;
-
-        // if(_body.find("\r\n\r\n") != std::string::npos)
-        //     std::cout << "splitssss : "  <<  _body.find("\r\n\r\n") << std::endl;
-        // else
-        //     std::cout << "Nopesss " << std::endl;
-
-
         bool header_exist = false;
 
         if(_body.find("\r\n\r\n") != std::string::npos)
@@ -390,9 +368,7 @@ void    ResponseBuilder::build_response(){
                 cgiHeader = _body.substr(0, _request.size() -  1);
         }
         else
-        {
             cgiHeader = _body.substr(0, _request.size() -  1);
-        }
 
         // _body has headers
         _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
@@ -419,34 +395,36 @@ void    ResponseBuilder::build_response(){
         }
         else
         {
-            _response.append("content-type: text/html; charset=UTF-8\r\n");
-            _response.append("\r\n");
-            _response.append(_body + "\r\n");
+            _response.append("Content-Type: text/html; charset=UTF-8\r\n");
+            _response.append("\r\n\r\n");
+            _response.append(_body);
         }
+    } else {
 
-
-            // _response.append(_body);
-
-
-
-        // std::cout << std::endl << std::endl << std::endl << "=============_response==============" << std::endl;
-        // std::cout << _response << std::endl;
-        // std::cout << "=============END _response==============" << std::endl;
-
-
-
-    }
-    else
-    {
         _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
+        if (_status_code.compare(0, 3, "200") != 0){
+            _response.append("Content-Type: text/html; charset=UTF-8\r\n");
+            std::map<std::string, std::string>::iterator it = _location.error_page.find(std::string(_status_code, 0, 3));
+            if (it != _location.error_page.end()){
+                stream_body(_location.root + it->second);
+            } else{
+                stream_body("./files/xxx.html");
+                size_t pos;
+                while ((pos = _body.find("@XXX@")) != std::string::npos)
+                {
+                    _body.replace(pos, 5, _status_code);
+                }
+            }
+        }
         if (_status_code == "301 Moved Permanently")
             _response.append("Location: " + _red_location + "\r\n");
         _response.append("Date: " + get_time() + "\r\n");
         _response.append("Connection: keep-alive\r\n");
         _response.append("Server: Webserv1.3.3.7 \r\n");
         _response.append("Content-Length: " + std::to_string(_body.size()) + "\r\n");
-        _response.append("\r\n");
+        _response.append("\r\n\r\n");
         _response.append(_body + "\r\n");
         //std::cout << _response;
     }
+
 }
