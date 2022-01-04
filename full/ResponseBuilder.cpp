@@ -394,37 +394,38 @@ void    ResponseBuilder::build_response(){
             cgiHeader = _body.substr(0, _request.size() -  1);
         }
 
-        // // _body has headers
-        // _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
-        // if (_status_code == "301 Moved Permanently")
-        //     _response.append("Location: " + _red_location + "\r\n");
-        // _response.append("Date: " + get_time() + "\r\n");
-        // _response.append("Connection: keep-alive\r\n");
-        // _response.append("Server: Webserv1.3.3.7 \r\n");
+        // _body has headers
+        _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
+        if (_status_code == "301 Moved Permanently")
+            _response.append("Location: " + _red_location + "\r\n");
+        _response.append("Date: " + get_time() + "\r\n");
+        _response.append("Connection: keep-alive\r\n");
+        _response.append("Server: Webserv1.3.3.7 \r\n");
 
-        // // Append cgi headers
-        // if(header_exist)
-        // {
-        //     cgiHeader.erase(std::remove(cgiHeader.begin(), cgiHeader.end(), '\r'), cgiHeader.end());
-        //     std::istringstream input(cgiHeader);
-        //     std::string line, buffer;
-        //     int i = 0;
-        //     while(std::getline(input, line)){
-        //         _response.append(line+"\r\n");
-        //         i++;
-        //     }
+        // Append cgi headers
+        if(header_exist)
+        {
+            cgiHeader.erase(std::remove(cgiHeader.begin(), cgiHeader.end(), '\r'), cgiHeader.end());
+            std::istringstream input(cgiHeader);
+            std::string line, buffer;
+            int i = 0;
+            while(std::getline(input, line)){
+                _response.append(line+"\r\n");
+                i++;
+            }
 
-        //     _response.append("\r\n");
-        //     _response.append(cgiBody + "\r\n");
-        // }
-        // else
-        // {
-        //     _response.append("\r\n");
-        //     _response.append(_body);
-        // }
+            _response.append("\r\n");
+            _response.append(cgiBody + "\r\n");
+        }
+        else
+        {
+            _response.append("content-type: text/html; charset=UTF-8\r\n");
+            _response.append("\r\n");
+            _response.append(_body + "\r\n");
+        }
 
 
-            _response.append(_body);
+            // _response.append(_body);
 
 
 
