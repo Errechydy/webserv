@@ -31,6 +31,8 @@ Location Config_parser::get_location_info(int conf_index, std::string url)
     {
         // std::cout << "Server name : " << servers[i].server_name << std::endl;
 
+
+
         // std::cout << "comparing => " << url << " : " << servers[i].server_name << std::endl;
         if(url.find(servers[i].server_name) != std::string::npos) // TODO: select the server index for this url
         {
@@ -61,7 +63,7 @@ Location Config_parser::get_location_info_from_server(int conf_index, int server
         }
     }
 
-    std::cout << "root = " << location.root << std::endl;
+    // std::cout << "loc cgi = " << location.cgi_path << std::endl;
     // std::cout << "loc extension = " << location.cgi_extension << std::endl;
 
 
@@ -125,14 +127,13 @@ int Config_parser::parse_config_file()
                 std::cout << "Error in config file: Multiple ports" << std::endl;
                 exit(1);
             }
-
             config_info[config_num].port = get_port(str);
             config_info[config_num].servers[0].port = config_info[config_num].port;
         }
         else if(tmp_arg == "host")
         {
-            // config_info[config_num].host = get_value(str);
-            config_info[config_num].servers[0].host = get_value(str);
+            config_info[config_num].host = get_value(str);
+            config_info[config_num].servers[0].host = config_info[config_num].host;
         }
         else if(tmp_arg == "server_name")
         {
@@ -379,7 +380,7 @@ Config Config_parser::new_config()
 {
     Config conf;
     conf.port = 9845;
-    // conf.host = "";
+    conf.host = "";
     conf.servers = std::vector<Server>();
     return conf;
 }
@@ -387,11 +388,14 @@ Config Config_parser::new_config()
 Server Config_parser::new_server()
 {
     Server server;
+    // std::map<std::string, Location>  location;
 
     server.port = 9845;
     server.method = "";
+    // server.error_page.insert(std::pair<std::string , std::string>("404", "404.html"));
     server.accept_upload = "0";
     server.autoindex = "0";
+
     return server;
 }
 
@@ -496,9 +500,12 @@ void Config_parser::fill_locations ()
             it->second.host = config_info[i].servers[0].host;
             it->second.server_name = config_info[i].servers[0].server_name;
 
+            // if(it->second.error_page == "")
+            //     it->second.error_page = config_info[i].servers[0].error_page;
+
+
             it->second.error_page.insert(config_info[i].servers[0].error_page.begin(), config_info[i].servers[0].error_page.end());
             it->second.redirect.insert(config_info[i].servers[0].redirect.begin(), config_info[i].servers[0].redirect.end());
-
 
 
 
@@ -506,7 +513,6 @@ void Config_parser::fill_locations ()
                 it->second.client_max_body_size = config_info[i].servers[0].client_max_body_size;
             if(it->second.method == "")
                 it->second.method = config_info[i].servers[0].method;
-
             if(it->second.root == "")
                 it->second.root = config_info[i].servers[0].root;
             if(it->second.autoindex == "")
@@ -537,8 +543,7 @@ void Config_parser::order_servers ()
         j = i + 1;
         while(j < len)
         {
-            // if(config_info[i].port == config_info[j].port && config_info[i].host == config_info[j].host)
-            if(config_info[i].port == config_info[j].port)
+            if(config_info[i].port == config_info[j].port && config_info[i].host == config_info[j].host)
             {
                 config_info[i].servers.push_back(config_info[j].servers[0]);
                 config_info.erase(config_info.begin() + j);

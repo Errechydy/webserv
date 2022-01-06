@@ -20,7 +20,7 @@ MySocket::MySocket(const Config_parser &config, const Tools &tools) : _config(co
 
 void MySocket::socketBind(const int &i, const int &socket, const int &port){
     _server[i]._servAdd.sin_family = AF_INET;
-    _server[i]._servAdd.sin_addr.s_addr = INADDR_ANY;
+    _server[i]._servAdd.sin_addr.s_addr = (_config.config_info[i].host == "" || _config.config_info[i].host == "localhost") ? INADDR_ANY : inet_addr(_config.config_info[i].host.c_str());
     _server[i]._servAdd.sin_port = htons(port);
     memset(_server[i]._servAdd.sin_zero, '\0', sizeof(_server[i]._servAdd.sin_zero));
     if (bind(socket, (struct sockaddr *)&(_server[i]._servAdd), sizeof(_server[i]._servAdd)) < 0)
@@ -102,13 +102,19 @@ void    MySocket::sendResponse(int newSocket){
     reqMap::iterator tmp;
     dataMap::iterator it = _sockData.find(newSocket);
     int check = send(it->first, &it->second._response[0], it->second._response.size(), 0);
-    if (check < 0)
-        throw std::string("Send ! error\n");
+    if (check < 0){
+        FD_CLR(it->first, &_writeFds);
+        FD_CLR(it->first, &_masterFds);
+        close(it->first);
+        _sockData.erase(it->first);
+        std::cout << "socket closed from server\n";
+        return;
+    }
     it->second._dataWriteCheck += check;
-    // std::cout << Green <<"--------------------------------/ sended response / --------------------------------\n" << Reset;
-    // std::cout << "----\n" <<it->second._response << "----\n";
-    // std::cout << check << "/" << it->second._response.size() << "\n";
-    // std::cout << Green <<"--------------------------------/ end sended response / --------------------------------\n" << Reset;
+    std::cout << Green <<"--------------------------------/ sended response / --------------------------------\n" << Reset;
+    std::cout << "----\n" <<it->second._response << "----\n";
+    std::cout << check << "/" << it->second._response.size() << "\n";
+    std::cout << Green <<"--------------------------------/ end sended response / --------------------------------\n" << Reset;
     if (it->second._dataWriteCheck == it->second._response.size()){
         FD_CLR(it->first, &_writeFds);
         FD_CLR(it->first, &_masterFds);
@@ -129,7 +135,7 @@ void     MySocket::dataHandler(const int &newSocket){
     //std::cout << byteRcived << ss.substr(0, 500) << "\n";
     if (byteRcived <= 0){
         if (byteRcived == 0){//EOS reached
-            std::cout << "connection closed on socket: " << newSocket << std::endl;
+            std::cout << "connection closed from client on socket: " << newSocket << std::endl;
         } else {
             perror("Error reciving data from some new socket:");
         }

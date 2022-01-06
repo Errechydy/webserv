@@ -49,7 +49,7 @@ class ResponseBuilder{
         void    check_cgi(const std::string &path);
         void    redirection(const std::string &path);
         void    build_response();
-        void    stream_body(const std::string &path);
+        void    stream_body(std::string &body, const std::string &path);
 
         //tools
         std::string    get_time();

@@ -17,9 +17,9 @@ struct Location {
     std::string         server_name;
     // std::string         error_page;             // exp: error.html
     std::map<std::string, std::string>  error_page;
-    std::map<std::string, std::string>  redirect;
     std::string         client_max_body_size;   // in kb,  "" unlimited,
     std::string         method;                 // GET, POST, DELETE
+    std::map<std::string, std::string>         redirect;               // /abc/ef/
     std::string         root;                   // /www/html/
     std::string         autoindex;             // 0, 1
     std::string         default_answer;         // index.html
@@ -50,7 +50,7 @@ struct Server {
 
 struct Config {
     int                 port;
-    // std::string         host;
+    std::string         host;
     std::vector<Server> servers; 
 };
 

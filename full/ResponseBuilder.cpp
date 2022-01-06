@@ -6,6 +6,12 @@
 
 ResponseBuilder::ResponseBuilder(const reqMap &request, Config_parser config, const Tools &tools, int server): _request(request), _config(config), _tools(tools){
     _status_code = "200 Ok";
+    if (_request.find("Host") == _request.end()){
+        _status_code = "400 Bad Request";
+        _response.append("HTTP/1.1 ");
+        build_response();
+        return;
+    }
     std::string host_uri = _request.find("Host")->second + _request.find("Uri")->second;
     //std::cout << host_uri << std::endl;
     _location = _config.get_location_info(server, host_uri);
@@ -131,6 +137,10 @@ void    ResponseBuilder::check_cgi(const std::string &path){
 }
 
 void    ResponseBuilder::check_uri(const std::string &uri, const std::string &root, const std::string &indexs){
+    if (uri.size() > 1024){
+        _status_code = "414 URI Too Long";
+        return;
+    }
     std::string path = root + uri;
     //std::cout << root << " + " << uri << "\n";
     struct stat path_stat;
@@ -140,6 +150,28 @@ void    ResponseBuilder::check_uri(const std::string &uri, const std::string &ro
         return;
     } else { //the path exist but lets find if it a dir or reg
         //std::string file_path;
+        if (_location.redirect.size() > 0){
+            std::string str;
+            if(_location.redirect.begin()->first == "300")
+                str = "300 Multiple Choices";
+            else if(_location.redirect.begin()->first == "301")
+                str = "301 Moved Permanently";
+            else if(_location.redirect.begin()->first == "302")
+                str = "302 Found";
+            else if(_location.redirect.begin()->first == "303")
+                str = "303 See Other";
+            else if(_location.redirect.begin()->first == "304")
+                str = "304 Not Modified";
+            else if(_location.redirect.begin()->first == "307")
+                str = "307 Temporary Redirect";
+            else if(_location.redirect.begin()->first == "308")
+                str = "308 Permanent Redirect";
+            else
+                str = "301 Moved Permanently";
+            _status_code = str;
+            _red_location = _location.redirect.begin()->second;
+            return;
+        }
         if (S_ISDIR(path_stat.st_mode)){ // it's a dir -> seach for indexs
             if (uri[uri.size() - 1] != '/'){
                 return redirection(uri);
@@ -155,8 +187,13 @@ void    ResponseBuilder::check_uri(const std::string &uri, const std::string &ro
         }
         std::string extention = std::string(path, path.rfind(".") + 1);
         if (_location.cgi_extension != "" && _location.cgi_path != "") {
-            if (extention == _location.cgi_extension)
+            if (extention == _location.cgi_extension){
+                if (access(_location.cgi_path.c_str(), F_OK) != 0){
+                    _status_code = "502 Bad Gateway";
+                    return;
+                }
                 check_cgi(path);
+            }
             else
                 _status_code = "403 Forbidden";
             return;
@@ -169,7 +206,7 @@ void    ResponseBuilder::check_uri(const std::string &uri, const std::string &ro
                 return;
         }
         _response.append("Last-Modified: " + last_mod(path_stat.st_mtime) + "\r\n");
-        stream_body(path);
+        stream_body(_body ,path);
     }
 }
 
@@ -311,11 +348,11 @@ void    ResponseBuilder::check_content_type(const std::string &extention){
     }
 }
 
-void    ResponseBuilder::stream_body(const std::string &path){
+void    ResponseBuilder::stream_body(std::string &body, const std::string &path){
     std::ifstream input(path);
     std::ostringstream ss;
     ss << input.rdbuf();
-    _body = ss.str();
+    body = ss.str();
     input.close();
 }
 
@@ -346,8 +383,7 @@ std::string ResponseBuilder::get_time(){
 }
 
 void    ResponseBuilder::build_response(){
-
-     if(_location.cgi_path != "")
+    if(_location.cgi_path != "")
     {
         std::string cgiHeader;
         std::string cgiBody;
@@ -366,12 +402,13 @@ void    ResponseBuilder::build_response(){
             cgiBody = _body;
         _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
         if (_status_code.compare(0, 3, "200") != 0){
+            std::cout << "cgiiiiiiiiii\n";
             _response.append("Content-Type: text/html; charset=UTF-8\r\n");
             std::map<std::string, std::string>::iterator it = _location.error_page.find(std::string(_status_code, 0, 3));
             if (it != _location.error_page.end()){
-                stream_body(_location.root + it->second);
+                stream_body(cgiBody, _location.root + it->second);
             } else{
-                stream_body("./files/xxx.html");
+                stream_body(cgiBody, "./files/xxx.html");
                 size_t pos;
                 while ((pos = cgiBody.find("@XXX@")) != std::string::npos)
                 {
@@ -399,15 +436,14 @@ void    ResponseBuilder::build_response(){
         _response.append("\r\n");
         _response.append(cgiBody + "\r\n");
     } else {
-
         _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
         if (_status_code.compare(0, 3, "200") != 0){
             _response.append("Content-Type: text/html; charset=UTF-8\r\n");
             std::map<std::string, std::string>::iterator it = _location.error_page.find(std::string(_status_code, 0, 3));
             if (it != _location.error_page.end()){
-                stream_body(_location.root + it->second);
+                stream_body(_body, _location.root + it->second);
             } else{
-                stream_body("./files/xxx.html");
+                stream_body(_body, "./files/xxx.html");
                 size_t pos;
                 while ((pos = _body.find("@XXX@")) != std::string::npos)
                 {
@@ -415,7 +451,7 @@ void    ResponseBuilder::build_response(){
                 }
             }
         }
-        if (_status_code == "301 Moved Permanently")
+        if (_status_code.compare(0, 1, "3") == 0)
             _response.append("Location: " + _red_location + "\r\n");
         _response.append("Date: " + get_time() + "\r\n");
         _response.append("Connection: keep-alive\r\n");
