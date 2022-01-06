@@ -37,9 +37,7 @@ class SocketData{
         std::string                         _request;
         std::string                         _response;
         std::string                         _reqBody;
-        // ResponseBuilder                     _response;
         reqMap                              _requestParssed;
-        //ConfigFile                          _config;
 
     public:
         SocketData();
@@ -51,7 +49,6 @@ class SocketData{
         void buildResponse(const Config_parser &config, const Tools &tools, int server);
         void check_chunked();
         void check_query();
-        //void check
 };
 
 #endif

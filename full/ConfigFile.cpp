@@ -18,26 +18,14 @@ Config_parser::~Config_parser(){
 Location Config_parser::get_location_info(int conf_index, std::string url)
 {
     url = url.substr(0, url.find("?"));
-
-
-    // std::cout << "URL = " << url << std::endl;
-
-
-
     std::vector<Server> servers = config_info[conf_index].servers;
     int server_index = 0;
 
     for (int i = servers.size() - 1; i >= 0; i--)
     {
-        // std::cout << "Server name : " << servers[i].server_name << std::endl;
-
-
-
-        // std::cout << "comparing => " << url << " : " << servers[i].server_name << std::endl;
         if(url.find(servers[i].server_name) != std::string::npos) // TODO: select the server index for this url
         {
             server_index = i;
-            // std::cout << "sn = " << servers[i].server_name << std::endl;
         }
     }
     return get_location_info_from_server(conf_index, server_index, url);
@@ -47,11 +35,6 @@ Location Config_parser::get_location_info_from_server(int conf_index, int server
 {
     Location location;
     std::string old_lacation_name = "";
-
-
-    // std::cout << "URL = " << url << std::endl;
-
-
     std::map<std::string, Location>::iterator it;
 
     for (it = config_info[conf_index].servers[server_index].locations.begin(); it != config_info[conf_index].servers[server_index].locations.end(); it++)
@@ -62,17 +45,11 @@ Location Config_parser::get_location_info_from_server(int conf_index, int server
             location = it->second;
         }
     }
-
-    // std::cout << "loc cgi = " << location.cgi_path << std::endl;
-    // std::cout << "loc extension = " << location.cgi_extension << std::endl;
-
-
     return location;
 }
 
 bool Config_parser::valid_location(std::string location_name, std::string url) // url without server_name
 {
-    // ex: location_name = / , url = /dshfisdf/sdfds ===> true // start with : url.find(location_name) != std::string::npos
     if(url.find(location_name) != std::string::npos)
         return true;
     return false;
@@ -108,8 +85,6 @@ int Config_parser::parse_config_file()
             continue;
         if(!valid_arg(str))
             return (1);
-
-        // std::cout << str << std::endl;
 
         tmp_arg = get_arg(str);
         
@@ -388,11 +363,8 @@ Config Config_parser::new_config()
 Server Config_parser::new_server()
 {
     Server server;
-    // std::map<std::string, Location>  location;
-
     server.port = 9845;
     server.method = "";
-    // server.error_page.insert(std::pair<std::string , std::string>("404", "404.html"));
     server.accept_upload = "0";
     server.autoindex = "0";
 
@@ -499,16 +471,8 @@ void Config_parser::fill_locations ()
             it->second.port = config_info[i].servers[0].port;
             it->second.host = config_info[i].servers[0].host;
             it->second.server_name = config_info[i].servers[0].server_name;
-
-            // if(it->second.error_page == "")
-            //     it->second.error_page = config_info[i].servers[0].error_page;
-
-
             it->second.error_page.insert(config_info[i].servers[0].error_page.begin(), config_info[i].servers[0].error_page.end());
             it->second.redirect.insert(config_info[i].servers[0].redirect.begin(), config_info[i].servers[0].redirect.end());
-
-
-
             if(it->second.client_max_body_size == "")
                 it->second.client_max_body_size = config_info[i].servers[0].client_max_body_size;
             if(it->second.method == "")

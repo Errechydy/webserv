@@ -19,7 +19,7 @@ class ResponseBuilder{
     friend class SocketData;
 
     public:
-        typedef std::map<std::string, std::string>  reqMap;//need to change to map that allow repeated key
+        typedef std::map<std::string, std::string>  reqMap;
 
     private:
         const reqMap                &_request;
@@ -32,12 +32,9 @@ class ResponseBuilder{
         std::string                 _red_location;
     
     public:
-        //ResponseBuilder();
         ResponseBuilder(const reqMap &request, Config_parser config, const Tools &tools, int server);
 
     private:
-
-        //checks
         void    check_http(const std::string &http);
         void    check_method(const std::string &method, const std::string &allowed_methods);
         void    check_uri(const std::string &uri, const std::string &root, const std::string &indexs);
@@ -51,7 +48,6 @@ class ResponseBuilder{
         void    build_response();
         void    stream_body(std::string &body, const std::string &path);
 
-        //tools
         std::string    get_time();
         std::string    last_mod(const time_t &lmod);
 };

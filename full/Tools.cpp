@@ -1,7 +1,6 @@
 #include "Tools.hpp"
 
 Tools::Tools(){
-    //std::cout << "tools constructor\n";
     _mime.clear();
     setMime();
 }
@@ -20,14 +19,12 @@ Tools::mimeMap& Tools::setMime(){
             else if (i == 1)
                 value = buffer;
             i++;
-            //std::cout << buffer << " ";
         }
         _mime.insert(std::pair<std::string, std::string>(key, value));
         key.clear();
         value.clear();
         buffer.clear();
         line_strem.clear();
-        //std::cout << "\n";
     }
     input.close();
     return _mime;

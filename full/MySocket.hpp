@@ -1,15 +1,15 @@
 #ifndef socket_hpp
 #define socket_hpp
 
-#include <sys/types.h>//socket
-#include <sys/socket.h>//socket
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
 #include <unistd.h>
-#include <netinet/in.h>//sockaddr_in
+#include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <arpa/inet.h>//inet_ntoa
+#include <arpa/inet.h>
 #include <map>
 #include "SocketData.hpp"
 #include "ConfigFile.hpp"
@@ -36,13 +36,11 @@ class MySocket{
             struct sockaddr_in          _servAdd;
             uint16_t                    _socketFd;
         };
-        std::vector<Server>             _server;              
-        //uint16_t                    _port;
+        std::vector<Server>             _server;
         std::string                 _root;
         fd_set                      _readFds;
         fd_set                      _writeFds;
         fd_set                      _masterFds;
-        //std::map<int, std::string>  _sockRequests;
         dataMap                     _sockData;
         Config_parser               _config;
         Tools                       _tools;
@@ -57,11 +55,6 @@ class MySocket{
         void newSocketHandler();
         void dataHandler(const int &newSocket);
         void sendResponse(int newSocket);
-
-
-        
-        //void requestParssing(dataMap::iterator &it);
-        //void buildResponse(reqMap::iterator &it);
 };
 
 #endif

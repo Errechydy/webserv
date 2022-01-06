@@ -15,36 +15,34 @@ struct Location {
     int                 port;
     std::string         host;
     std::string         server_name;
-    // std::string         error_page;             // exp: error.html
     std::map<std::string, std::string>  error_page;
-    std::string         client_max_body_size;   // in kb,  "" unlimited,
-    std::string         method;                 // GET, POST, DELETE
-    std::map<std::string, std::string>         redirect;               // /abc/ef/
-    std::string         root;                   // /www/html/
-    std::string         autoindex;             // 0, 1
-    std::string         default_answer;         // index.html
-    std::string         cgi_extension;          // php
-    std::string         cgi_path;               // localhost:9000
-    std::string         accept_upload;          // 0, 1
-    std::string         upload_path;            // /www/html/upload
+    std::string         client_max_body_size;
+    std::string         method;
+    std::map<std::string, std::string>         redirect;
+    std::string         root;
+    std::string         autoindex;
+    std::string         default_answer;
+    std::string         cgi_extension;
+    std::string         cgi_path;
+    std::string         accept_upload;
+    std::string         upload_path;
 };
 
 struct Server {
     int                 port;
     std::string         host;
     std::string         server_name;
-    // std::string         error_page;             // exp: error.html
     std::map<std::string, std::string> error_page;
-    std::string         client_max_body_size;   // in kb,  "" unlimited,
-    std::string         method;                 // GET, POST, DELETE
-    std::map<std::string, std::string>         redirect;               // /abc/ef/
-    std::string         root;                   // /www/html/
-    std::string         autoindex;             // 0, 1
-    std::string         default_answer;         // index.html
-    std::string         cgi_extension;          // php
-    std::string         cgi_path;               // localhost:9000
-    std::string         accept_upload;          // 0, 1
-    std::string         upload_path;            // /www/html/upload
+    std::string         client_max_body_size;
+    std::string         method;
+    std::map<std::string, std::string>         redirect;
+    std::string         root;
+    std::string         autoindex;
+    std::string         default_answer;
+    std::string         cgi_extension;
+    std::string         cgi_path;
+    std::string         accept_upload;
+    std::string         upload_path;
     std::map<std::string, Location>  locations;
 };
 

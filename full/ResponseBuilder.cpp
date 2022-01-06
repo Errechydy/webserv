@@ -1,8 +1,5 @@
 #include "ResponseBuilder.hpp"
 
-// ResponseBuilder::ResponseBuilder(){
-//     _response.clear();
-// }
 
 ResponseBuilder::ResponseBuilder(const reqMap &request, Config_parser config, const Tools &tools, int server): _request(request), _config(config), _tools(tools){
     _status_code = "200 Ok";
@@ -13,9 +10,7 @@ ResponseBuilder::ResponseBuilder(const reqMap &request, Config_parser config, co
         return;
     }
     std::string host_uri = _request.find("Host")->second + _request.find("Uri")->second;
-    //std::cout << host_uri << std::endl;
     _location = _config.get_location_info(server, host_uri);
-    //std::cout << "locaaaaation "<<_location.root << std::endl;
     check_http(_request.find("Httpv")->second);
     build_response();
 }
@@ -26,23 +21,19 @@ void    ResponseBuilder::check_http(const std::string &http){
         check_method(_request.find("Method")->second, _location.method);
     } else {
         _status_code = "505 HTTP Version Not Supported";
-        std::cout << http << ": " <<_status_code << std::endl;//don't delete or comment
         return;
     }
 }
 
 void    ResponseBuilder::check_method(const std::string &method, const std::string &allowed_methods){
-    //std::cout << "checking allowed methods: " << method << "...\n";
     if (std::string("GET,POST,DELETE,PUT,TRACE,CONNECT,HEAD,OPTIONS").find(method) == std::string::npos){
         _status_code = "501 Not Implemented";
-        std::cout << method << ": " <<_status_code << std::endl;//don't delete or comment
         return;
     }
     else if(allowed_methods.find(method) != std::string::npos){
         check_uri(_request.find("Uri")->second, _location.root, _location.default_answer);
     } else {
             _status_code = "405 Method Not Allowed";
-            std::cout << method << ": " <<_status_code << std::endl;//don't delete or comment
             return;
     }
 }
@@ -54,32 +45,10 @@ void    ResponseBuilder::check_cgi(const std::string &path){
     std::string req_method = "";
     std::string req_content_type = "";
     std::string req_content_length = "NULL";
-
-
-
-
-    // for testing
     req_method = "";
     req_content_type = "";
     req_content_length = "";
     req_uri = "";
-    // req_uri = "/php.php?userId=54545&b=value2";
-
-    // req_method = "POST";
-    // req_content_type = "application/x-www-form-urlencoded";
-    // req_content_length = "10";
-
-    // req_method = "GET";
-    // req_content_type = "text/html";
-    // req_content_length = "";
-
-    // req_body = "v=900fs55";
-
-
-
-    // for (std::map<std::string, std::string >::iterator it= _location.error_page.begin(); it!= _location.error_page.end(); ++it)
-    //     std::cout << it->first << " => " << it->second << '\n';
-
 
     reqMap::const_iterator it_content_type = _request.find("content-type");
     if (it_content_type != _request.end()){
@@ -106,32 +75,13 @@ void    ResponseBuilder::check_cgi(const std::string &path){
     if (it_uri != _request.end()){
         req_uri = it_uri->second;
     }
-
-    // std::cout << "-------uri---------" << std::endl;
-    // std::cout << "req_uri : " << req_uri << std::endl;
-    // std::cout << "-------uri---------" << std::endl;
-
-    // std::cout << "-------body---------" << std::endl;
-    // std::cout << req_body << std::endl;
-    // std::cout << "-------end-body---------" << std::endl;
-
-
-
-
-
-
-
     Cgi_class cgi(_location, path, req_cookies, req_uri, req_method, req_content_type, req_content_length);
     cgi.send_cgi_body(req_body);
-
-    // Read cgi response
     int nbytes;
 	char cgi_buff[1024] = {0};
     while ((nbytes = read(cgi.pipe_fd[0], cgi_buff, 1024)) > 0) { 
            _body += cgi_buff;
     }
-
-    // std::cout << "Cgi body : " << _body << std::endl;
 	close(cgi.pipe_fd[0]);
     return;
 }
@@ -142,14 +92,11 @@ void    ResponseBuilder::check_uri(const std::string &uri, const std::string &ro
         return;
     }
     std::string path = root + uri;
-    //std::cout << root << " + " << uri << "\n";
     struct stat path_stat;
-    if (stat(path.c_str(), &path_stat) < 0){ // check if path exist both (reg or dir)
+    if (stat(path.c_str(), &path_stat) < 0){
         _status_code = "404 Not Found";
-        std::cout << path << ": " <<_status_code << std::endl;//don't delete or comment
         return;
-    } else { //the path exist but lets find if it a dir or reg
-        //std::string file_path;
+    } else {
         if (_location.redirect.size() > 0){
             std::string str;
             if(_location.redirect.begin()->first == "300")
@@ -172,7 +119,7 @@ void    ResponseBuilder::check_uri(const std::string &uri, const std::string &ro
             _red_location = _location.redirect.begin()->second;
             return;
         }
-        if (S_ISDIR(path_stat.st_mode)){ // it's a dir -> seach for indexs
+        if (S_ISDIR(path_stat.st_mode)){
             if (uri[uri.size() - 1] != '/'){
                 return redirection(uri);
             }
@@ -182,7 +129,6 @@ void    ResponseBuilder::check_uri(const std::string &uri, const std::string &ro
         }
         if (access(path.c_str(), R_OK) != 0){
             _status_code = "403 Forbidden";
-            std::cout << path << ": " <<_status_code << std::endl;//don't delete or comment
             return;
         }
         std::string extention = std::string(path, path.rfind(".") + 1);
@@ -216,7 +162,6 @@ int     ResponseBuilder::check_max_body(){
         _status_code = "413 Payload Too Large";
         return -1;
     }
-    std::cout << "maxbody size: " << maxBodySize << "\n"; 
     return 0;
 }
 
@@ -241,16 +186,11 @@ int     ResponseBuilder::check_uploads(){
                 filename = it->second.substr(pos + 10, pos2 - (pos + 10));
 
                 pos2 = it->second.find("\r\n\r\n") + 4;
-                //std::cout << pos2 << "\n";
                 pos = it->second.find(boundry + "--");
-                //std::cout << pos << "\n";
-                //std::cout << _location.root + _location.upload_path + "/" + filename << "\n";
                 std::ofstream out(_location.root + _location.upload_path + "/" + filename);
                 out << it->second.substr(pos2, pos - pos2 - 2);
                 out.close();
-                //std::cout << "upload file name" << filename << "\n";
             }
-            //std::cout << boundry << "\n";
         }
     }
 
@@ -267,7 +207,6 @@ int    ResponseBuilder::check_autoindex(const std::string &path){
     {
         _response.append("Content-Type: text/html; charset=UTF-8\r\n");
         _body += "<html><head><title>Index of " + _request.find("Uri")->second + "</title></head><body><h1>Index of " +  _request.find("Uri")->second + "</h1><hr><pre><table style=\"width:70%/;text-align: left;\">";
-        // std::cout<<"List of Files & Folders:-\n";
         for(d=readdir(dr); d!=NULL; d=readdir(dr))
         {
             if (stat((path + d->d_name).c_str(), &s_file) < 0)
@@ -281,7 +220,6 @@ int    ResponseBuilder::check_autoindex(const std::string &path){
             else
                 _body += "<th style=\"padding-right: 250px;\"><p>-</p></th>";
             _body += "</tr>";
-            // std::cout<< d->d_name << s_file.st_size << last_mod(s_file.st_mtime) << std::endl;
         }
         _body += "</table></pre><hr></body></html>";
         closedir(dr);
@@ -295,7 +233,6 @@ int     ResponseBuilder::check_indexs(std::string &path, const std::string &inde
 
     if (indexs.size() == 0){
         _status_code = "403 Forbidden";
-        std::cout << path << ": " <<_status_code << std::endl;//don't delete or comment
         return -1;
     }
 
@@ -311,19 +248,18 @@ int     ResponseBuilder::check_indexs(std::string &path, const std::string &inde
     size_t i = 0;
     for (i = 0; i < strings.size(); i++){
         path = old_path + strings[i];
-        if ((stat(path.c_str(), &path_stat)) < 0){//test path + index if exist .. if it is set path
+        if ((stat(path.c_str(), &path_stat)) < 0){
             continue;
         }
         break;
     }
-    if (i == strings.size()){ // the path + index not found
+    if (i == strings.size()){
         if (_location.autoindex == "1"){
             check_autoindex(old_path);
             return 1;
         }
         else {
             _status_code = "404 Not Found";
-            std::cout << path << ": " <<_status_code << std::endl;//don't delete or comment
             return -1;
         }
     }
@@ -333,12 +269,10 @@ int     ResponseBuilder::check_indexs(std::string &path, const std::string &inde
 void    ResponseBuilder::redirection(const std::string &path){
     _status_code = "301 Moved Permanently";
     _red_location = path + "/";
-    //stream_body("./files/xxx.html");
 }
 
 void    ResponseBuilder::check_content_type(const std::string &extention){
     std::string content_type = _tools._mime.find(extention)->second;
-    //it = _tools._mime.find(extention);
     if(!content_type.size()){
         _status_code = "415 Unsupported Media Type";
         return;
@@ -363,7 +297,6 @@ std::string ResponseBuilder::last_mod(const time_t &lmod){
     timeinfo = localtime(&lmod);
     strftime(buffer,sizeof(buffer),"%a, %d %m %Y %H:%M:%S GMT",timeinfo);
     std::string str(buffer);
-    //std::cout << "last mod" <<str << "\n";
     return str;
 }
 
@@ -377,8 +310,6 @@ std::string ResponseBuilder::get_time(){
 
     strftime(buffer,sizeof(buffer),"%a, %d %m %Y %H:%M:%S GMT",timeinfo);
     std::string str(buffer);
-
-    //std::cout << str;
     return str;
 }
 
@@ -400,9 +331,8 @@ void    ResponseBuilder::build_response(){
         }
         else 
             cgiBody = _body;
-        _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
+        _response.insert(9, _status_code + "\r\n");
         if (_status_code.compare(0, 3, "200") != 0){
-            std::cout << "cgiiiiiiiiii\n";
             _response.append("Content-Type: text/html; charset=UTF-8\r\n");
             std::map<std::string, std::string>::iterator it = _location.error_page.find(std::string(_status_code, 0, 3));
             if (it != _location.error_page.end()){
@@ -436,7 +366,7 @@ void    ResponseBuilder::build_response(){
         _response.append("\r\n");
         _response.append(cgiBody + "\r\n");
     } else {
-        _response.insert(9, _status_code + "\r\n");//insert after HTTP/1.1
+        _response.insert(9, _status_code + "\r\n");
         if (_status_code.compare(0, 3, "200") != 0){
             _response.append("Content-Type: text/html; charset=UTF-8\r\n");
             std::map<std::string, std::string>::iterator it = _location.error_page.find(std::string(_status_code, 0, 3));
@@ -459,7 +389,6 @@ void    ResponseBuilder::build_response(){
         _response.append("Content-Length: " + std::to_string(_body.size()) + "\r\n");
         _response.append("\r\n");
         _response.append(_body + "\r\n");
-        //std::cout << _response;
     }
 
 }

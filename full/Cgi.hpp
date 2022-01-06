@@ -32,8 +32,6 @@ class Cgi_class
             int exec_return;
             char * const args[3] = {const_cast<char *>(location.cgi_path.c_str()), const_cast<char *>(req_file.c_str()), NULL};
             exec_return = execute_cgi(args);
-            // if(!exec_return)
-            //     exit(1);
         }
 		~Cgi_class();
         int execute_cgi(char * const args[]);
