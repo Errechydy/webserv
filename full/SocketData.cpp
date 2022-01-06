@@ -52,7 +52,7 @@ void SocketData::check_chunked(){
     if (it == _requestParssed.end())
         it = _requestParssed.find("transfer-encoding");
     if (it != _requestParssed.end() && it->second == "chunked"){
-        // std::cout << "chunked\n";
+        std::cout << "chunked\n";
         while(true){
             tmp = _reqBody.find("\r\n", pos);
             //std::cout << _reqBody[tmp - 1];
@@ -74,7 +74,7 @@ void SocketData::check_chunked(){
         //std::cout << "**" << _reqBody << "**\n";
         
     } else {
-        // std::cout << "not chunked\n";            
+        std::cout << "not chunked\n";            
     }
 
     // std::ofstream out("output.png");
@@ -107,11 +107,11 @@ void SocketData::parse(){
     }else{
         header = _request.substr(0, _request.size() -  1);
     }
-    // std::cout << Red <<"--------------------------------/ request/ --------------------------------\n" << Reset;
-    // //std::cout << _request << "\n";
-    // std::cout << "---Headers---\n" << header << "-------\n";
-    // //std::cout << "---Body---\n" << _reqBody << "-------\n";
-    // std::cout << Red <<"--------------------------------/ end request/ --------------------------------\n" << Reset;
+    std::cout << Red <<"--------------------------------/ request/ --------------------------------\n" << Reset;
+    //std::cout << _request << "\n";
+    std::cout << "---Headers---\n" << header << "-------\n";
+    //std::cout << "---Body---\n" << _reqBody << "-------\n";
+    std::cout << Red <<"--------------------------------/ end request/ --------------------------------\n" << Reset;
     
     header.erase(std::remove(header.begin(), header.end(), '\r'), header.end());//remove /r (printing problem)
     

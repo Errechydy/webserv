@@ -4,8 +4,8 @@
 
 // echo "my value = ".$_GET['userId'].", v = ".$_POST['v'];
 
-// echo "userId = ".$_GET["userId"];
+echo "userId = ".$_GET["userId"];
 
-echo "hello from php";
+// echo "hello from php";
 
 ?>

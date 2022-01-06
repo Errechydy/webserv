@@ -2,7 +2,7 @@
 
 MySocket::MySocket(const Config_parser &config, const Tools &tools) : _config(config), _tools(tools){
 
-    // std::cout << "number of server: " << _config.config_info.size() << std::endl;
+    std::cout << "number of server: " << _config.config_info.size() << std::endl;
     for (size_t i = 0; i < _config.config_info.size(); i++){
         Server server;
         _server.push_back(server);
@@ -28,8 +28,8 @@ void MySocket::socketBind(const int &i, const int &socket, const int &port){
         perror("Socket can't bind:");
         exit(EXIT_FAILURE);
     }
-    // std::cout << "socket id:" << socket;
-    // std::cout << " binded on port: " << port << std::endl;
+    std::cout << "socket id:" << socket;
+    std::cout << " binded on port: " << port << std::endl;
 }
 
 void MySocket::socketListen(const int &socket){
@@ -38,7 +38,7 @@ void MySocket::socketListen(const int &socket){
         perror("Socket can't listen:");
         exit(EXIT_FAILURE);
     }
-    // std::cout << "listning on socket " << socket << std::endl;
+    std::cout << "listning on socket " << socket << std::endl;
 }
 
 int MySocket::socketAccept(const int &socket){
@@ -83,10 +83,10 @@ void    MySocket::newSocketHandler(){
                     newSocket = socketAccept(i);
                     FD_SET(newSocket, &_masterFds);
                     fd_max = newSocket > fd_max ? newSocket : fd_max;
-                    // std::cout << "socket: " << newSocket << " accepted from " << i <<  "\n";
+                    std::cout << "socket: " << newSocket << " accepted from " << i <<  "\n";
                     _sockData.insert(std::pair<int, SocketData>(newSocket, SocketData())).first->second._server = it->second;
                 } else { //we have some new connections .. lets get some data
-                    // std::cout << "reading on: " << i << "\n";
+                    std::cout << "reading on: " << i << "\n";
                     dataHandler(i);
                 }
             }
@@ -123,13 +123,13 @@ void    MySocket::sendResponse(int newSocket){
 void     MySocket::dataHandler(const int &newSocket){
     int         byteRcived;
     char        buffer[1024] = {'\0'}; //data will be recived 1048576(max size recv buffer) byte by 1048576 byte
-    // std::cout << newSocket << "------\n";
+    std::cout << newSocket << "------\n";
     byteRcived = recv(newSocket, &buffer[0], sizeof(buffer), 0);
     //std::string ss(buffer, 1024);
     //std::cout << byteRcived << ss.substr(0, 500) << "\n";
     if (byteRcived <= 0){
         if (byteRcived == 0){//EOS reached
-            // std::cout << "connection closed on socket: " << newSocket << std::endl;
+            std::cout << "connection closed on socket: " << newSocket << std::endl;
         } else {
             perror("Error reciving data from some new socket:");
         }
